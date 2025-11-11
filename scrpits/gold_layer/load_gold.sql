@@ -1,3 +1,16 @@
+/*************************************************************************
+Script Name    : load_gold
+Author         : Oybek Alikulov
+
+Script Purpose :
+	This stored procedure is responsible for loading the Gold Layer tables 
+	from the cleansed and transformed Silver Layer data.
+	It performs a full load process (truncate and insert) for all dimension 
+	and fact tables in the data warehouse. 
+	The procedure builds a star schema structure consisting of customer, 
+	card, and merchant dimensions, and a central fact table for transactions.
+	TABLOCK is applied during insert operations to enhance load performance.
+*************************************************************************/
 CREATE OR ALTER PROCEDURE load_gold AS
 BEGIN
 	PRINT'========================================================='
