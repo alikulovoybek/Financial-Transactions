@@ -85,24 +85,17 @@ BEGIN
 			merchant_city,
 			merchant_state ,
 			merchant_country,
-			zip ,
-			category_id ,
-			category_description,
-			fraud_comitted )
+			zip 
+			 )
 		SELECT 
-			td.merchant_id,
-			td.merchant_city,
-			td.merchant_state,
-			td.merchant_country,
-			td.zip,
-			mc.mcc_code AS category_id,
-			mc.description AS category_description,
-			ISNULL(fl.is_fraud,'Unknown') AS fraud_comitted
-		FROM silver.transactions_data td
-		LEFT JOIN silver.mcc_code mc
-		ON td.mcc=mc.mcc_code
-		LEFT JOIN silver.fraud_labels fl
-		ON td.id=fl.transcation_id
+			DISTINCT
+			merchant_id,
+			merchant_city,
+			merchant_state,
+			merchant_country,
+			zip	
+		FROM silver.transactions_data 
+		
 		SET @end_time=GETDATE();
 		PRINT'LOADING DURATION IS '+CAST(DATEDIFF(SECOND,@start_time,@end_time) as NVARCHAR)+' SECONDS'
 		PRINT'-------------------------------------------------------'
@@ -111,30 +104,35 @@ BEGIN
 		SET @start_time=GETDATE();
 		TRUNCATE TABLE gold.fact_transactions;
 		INSERT INTO gold.fact_transactions WITH(TABLOCK)(
-			transaction_id,
-			customer_key,
-			card_key,
-			merchant_key,
-			transaction_amount,
+			transaction_id ,
+			customer_id ,
+			card_id ,
+			merchant_id ,
+			transaction_amount ,
 			transaction_date,
-			transaction_method,
-			transaction_error)
+			transaction_description ,
+			transaction_method ,
+			transaction_error ,
+			fraud_comitted
+		)
 		SELECT 
 			td.id AS transaction_id,
-			dr.customer_key,
-			dc.card_key,
-			dm.merchant_key,
+			td.client_id AS customer_id,
+			td.card_id,
+			td.merchant_id,
 			td.amount AS transaction_amount,
 			td.date AS transaction_date,
+			mc.description AS transaction_description,
 			td.use_chip AS transaction_method,
-			td.errors AS transaction_error
+			td.errors AS transaction_error,
+			ISNULL(fl.is_fraud,'Unknown') AS fraud_comitted
+
 		FROM silver.transactions_data td
-		LEFT JOIN gold.dim_customer dr
-		ON td.client_id=dr.customer_id
-		LEFT JOIN gold.dim_cards dc
-		ON td.card_id=dc.card_id
-		LEFT JOIN gold.dim_merchants dm
-		ON td.merchant_id=dm.merchant_id;
+		LEFT JOIN silver.fraud_labels fl
+		ON td.id=fl.transcation_id
+		LEFT JOIN silver.mcc_code mc
+		ON td.mcc=mc.mcc_code
+
 		SET @end_time=GETDATE();
 		PRINT'LOADING DURATION IS '+CAST(DATEDIFF(SECOND,@start_time,@end_time) as NVARCHAR)+' SECONDS'
 		PRINT'-------------------------------------------------------'
